@@ -210,7 +210,7 @@ function renderPanel(){
   S.mode="home";S.sel=null;renderHome(p);
 }
 function banner(){
-  if(S.dbState==="off")return '<div class="banner">Sua sessão expirou. <a href="'+esc(CFG.login||"/")+'">Entre de novo no Portal</a> para ver os eventos.</div>';
+  if(S.dbState==="off")return '<div class="banner">Sua sessão expirou. <a href="'+esc(CFG.login||"/")+'">Entre de novo</a> para ver os eventos.</div>';
   if(S.dbState==="error")return '<div class="banner">Não foi possível carregar os eventos. Recarregue a página para tentar de novo.</div>';
   if(S.dbState==="loading")return '<p class="muted">Carregando eventos…</p>';
   return "";

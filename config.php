@@ -7,27 +7,34 @@
  * config.local.example.php.
  */
 $config = [
-    // Conexão MySQL. Em homologação use o schema wibag_staging (porta 8081).
+    // Conexão MySQL. Enquanto o sistema roda separado, ele tem o próprio
+    // schema (wibag_cobertura), sem tocar no banco dos outros sistemas.
     'db' => [
-        'dsn'      => 'mysql:host=127.0.0.1;port=3306;dbname=wibag_system;charset=utf8mb4',
-        'usuario'  => 'wibag',
+        'dsn'      => 'mysql:host=127.0.0.1;port=3306;dbname=wibag_cobertura;charset=utf8mb4',
+        'usuario'  => 'cobertura',
         'senha'    => '',
     ],
 
-    // Caminho do auth_shared.php do Portal Hub. Se o arquivo existir, ele é
-    // incluído antes de qualquer página ou chamada da API (sessão unificada).
+    // De onde vem o login:
+    //  'proprio' → login.php e usuários da tabela cob_usuarios (sistema independente).
+    //  'portal'  → sessão do Portal Hub via auth_shared.php (quando for integrado).
+    'auth_modo' => 'proprio',
+
+    // Modo 'portal': caminho do auth_shared.php, incluído antes de tudo.
     'auth_shared' => __DIR__ . '/../auth_shared.php',
 
-    // Chaves de $_SESSION de onde vem o usuário logado e o perfil dele.
+    // Modo 'portal': chaves de $_SESSION com o usuário logado e o perfil dele.
     // [a confirmar no sistema] ajuste para os nomes usados pelo auth_shared.php.
     'sessao_usuario' => ['usuario_nome', 'usuario', 'nome', 'login', 'user'],
     'sessao_perfil'  => ['usuario_perfil', 'perfil', 'role'],
 
-    // Para onde mandar quem abre a página sem estar logado.
+    // Modo 'portal': para onde mandar quem abre a página sem estar logado.
+    // No modo 'proprio' é sempre login.php.
     'url_login' => '/',
 
     // Perfis que podem registrar, editar e excluir eventos. Os demais só consultam.
-    'perfis_edicao' => ['admin', 'administrador', 'operador', 'tecnico', 'técnico'],
+    // No modo 'proprio' os perfis são admin, editor e leitor.
+    'perfis_edicao' => ['admin', 'editor', 'administrador', 'operador', 'tecnico', 'técnico'],
 
     // Sem login: true libera leitura e escrita para qualquer visitante.
     // Use só em desenvolvimento local.
@@ -38,7 +45,8 @@ $config = [
     'geocode' => [
         'ativo'      => true,
         'url'        => 'https://nominatim.openstreetmap.org/search',
-        'user_agent' => 'WibagSystem-Cobertura/1.0 (contato@wibag.com.br)',
+        // O Nominatim exige um User-Agent que identifique o sistema.
+        'user_agent' => 'WibagSystem-Cobertura/1.0',
     ],
 
     // Arquivo compactado com as ERBs da Anatel (gerado a partir do design).

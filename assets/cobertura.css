@@ -55,6 +55,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn.ghost{background:transparent;color:var(--ink-2)}
 .btn.danger{background:transparent;color:var(--bad)}
 .bar .btn.primary{box-shadow:var(--shadow);padding:10px 16px}
+.user{margin:0;display:flex;gap:8px;align-items:center;background:var(--panel);box-shadow:var(--shadow);border-radius:10px;padding:5px 5px 5px 12px;font-size:14px;color:var(--ink-2)}
 .hint{position:absolute;z-index:500;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 16px;border-radius:999px;font-weight:500;font-size:14px;box-shadow:var(--shadow);display:none;white-space:nowrap}
 .placing .hint{display:block}
 
@@ -203,3 +204,10 @@ a{color:var(--focus)}
 @media (prefers-reduced-motion:no-preference){
   .rank .meter b{transition:width .4s ease}
 }
+
+/* login */
+.login{min-height:100%;display:grid;place-items:center;padding:16px;overflow:auto}
+.login .card{background:var(--panel);box-shadow:var(--shadow);border-radius:14px;padding:26px 24px;width:100%;max-width:360px}
+.login h1{font-family:var(--font-c);font-weight:700;font-size:26px;margin:10px 0 2px;line-height:1.05}
+.login .sub{color:var(--ink-2);font-size:14px;margin-bottom:18px}
+.login .btn{width:100%;padding:10px}
