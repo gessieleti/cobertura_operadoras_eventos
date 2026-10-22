@@ -53,12 +53,15 @@ const map=L.map("map",{minZoom:3,maxZoom:18}).setView([-14.5,-52],4);
 map.zoomControl.setPosition("bottomleft");
 // A barra fica dentro do mapa: sem isso, o clique em "Registrar evento" já marcava um pin embaixo do botão.
 L.DomEvent.disableClickPropagation($(".bar"));
-map.attributionControl.setPrefix(false).addAttribution("Limites estaduais: IBGE via Code for America · Antenas: Anatel, ERBs jul/2026");
+const ATRIB="Limites estaduais: IBGE via Code for America";
+map.attributionControl.setPrefix(false).addAttribution(ATRIB);
 const states=L.geoJSON(window.BR_ESTADOS,{style:()=>({color:cssv("--land-line"),weight:1,fillColor:cssv("--land"),fillOpacity:1}),onEachFeature:(f,l)=>l.bindTooltip(f.properties.n,{sticky:true,direction:"top",opacity:.9})}).addTo(map);
 L.layerGroup(CAPITAIS.map(([n,la,lo])=>L.marker([la,lo],{interactive:false,keyboard:false,icon:L.divIcon({className:"",html:'<div class="cap">'+esc(n)+'</div>',iconSize:[0,0]})}))).addTo(map);
 const pins=L.layerGroup().addTo(map);
 /* ---------- antenas (Anatel) ---------- */
-const ERB={ready:false,view:"todas",alc:false,n:0,selI:-1};
+const ERB={ready:false,view:"todas",alc:false,n:0,selI:-1,ref:"",anterior:""};
+// Mês da base e da base anterior vêm do próprio arquivo (bin/gerar_erb.py).
+const desde=()=>"desde "+(ERB.anterior||"a base anterior");
 const TBIT=[{b:8,k:"5G",c:"--t5g"},{b:4,k:"4G",c:"--t4g"},{b:2,k:"3G",c:"--t3g"},{b:1,k:"2G",c:"--t2g"}];
 const TNEED={"5G":8,"4G+":4,"4G":4,"3G":2,"2G":1};
 const BANDF={"700":[1.4,800,20000],"850":[1.3,700,15000],"900":[1.25,700,15000],"1800":[1,400,8000],"2100":[.9,350,6000],"2300":[.8,300,4000],"2500":[.75,300,4000],"3500":[.55,150,2000],"26000":[.1,50,300]};
@@ -158,11 +161,12 @@ async function loadErb(){
     // Se o servidor já entregou descompactado (Content-Encoding), o arquivo não começa com a assinatura gzip.
     const txt=bin[0]===0x1f&&bin[1]===0x8b?await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).text():new TextDecoder().decode(bin);
     const o=JSON.parse(txt);const n=o.lo.length;
-    Object.assign(ERB,{ops:o.ops,bands:o.bands,inf:o.inf,cities:o.cities,sum:o.sum,remTot:o.remTot,abrTot:o.abrTot,a:o.a,br:o.br,num:o.n,c:o.c,
+    Object.assign(ERB,{ref:o.ref||"",anterior:o.anterior||"",ops:o.ops,bands:o.bands,inf:o.inf,cities:o.cities,sum:o.sum,remTot:o.remTot,abrTot:o.abrTot,a:o.a,br:o.br,num:o.n,c:o.c,
       m:Uint8Array.from(o.m),b:Uint16Array.from(o.b),f:Uint16Array.from(o.f),s:Uint8Array.from(o.s),d:Uint16Array.from(o.d)});
     ERB.lat=new Float64Array(n);ERB.lng=new Float64Array(n);ERB.my=new Float64Array(n);ERB.grid=new Map();
     let acc=0;for(let i=0;i<n;i++){acc+=o.la[i];const la=acc/1e5,lo=o.lo[i]/1e5;ERB.lat[i]=la;ERB.lng[i]=lo;ERB.my[i]=merc(la);const k=gkey(la,lo);let g=ERB.grid.get(k);if(!g)ERB.grid.set(k,g=[]);g.push(i)}
-    ERB.n=n;ERB.ready=true;const fe=$("#fErb");fe.disabled=false;fe.options[0].textContent="Antenas: todas";$("#alcBtn").disabled=false;erbLayer.redraw();
+    ERB.n=n;ERB.ready=true;const fe=$("#fErb");fe.disabled=false;fe.options[0].textContent="Antenas: todas";fe.options[1].textContent="Antenas novas "+desde();fe.options[2].textContent="Ganharam 5G "+desde();
+    if(ERB.ref)map.attributionControl.removeAttribution(ATRIB).addAttribution(ATRIB+" · Antenas: Anatel, ERBs "+ERB.ref);$("#alcBtn").disabled=false;erbLayer.redraw();
     if(S.mode==="local"||S.mode==="home")renderPanel();
   }catch(e){console.error(e);ERB.error=true;const fe=$("#fErb");fe.options[0].textContent="Antenas indisponíveis"}
 }
@@ -172,7 +176,7 @@ const fmtDist=d=>d<1000?Math.max(10,Math.round(d/10)*10)+" m":(d/1000).toFixed(1
 const techMini=tb=>TBIT.filter(t=>tb&t.b).map(t=>'<span class="minichip" style="--c:var('+t.c+')">'+t.k+'</span>').join("");
 function erbPopup(i){
   const ci=ERB.cities[ERB.c[i]]||["",""],tb=ERB.m[i]>>4,bs=bandsOf(i),inf=infOf(i);
-  const badge=ERB.s[i]===1?'<span class="nbadge">Nova desde abril</span>':ERB.s[i]===2?'<span class="nbadge">Ganhou 5G desde abril</span>':"";
+  const badge=ERB.s[i]===1?'<span class="nbadge">Nova '+desde()+'</span>':ERB.s[i]===2?'<span class="nbadge">Ganhou 5G '+desde()+'</span>':"";
   const alc=TBIT.filter(t=>tb&t.b).map(t=>t.k+" ≈ "+fmtDist(techR(i,t.k))).join(" · ");
   ERB.selI=i;erbLayer.redraw();
   L.popup({maxWidth:280,autoPanPadding:[20,80]}).setLatLng([ERB.lat[i],ERB.lng[i]]).setContent('<div class="pop"><b>'+opDot(erbOp(i))+' '+esc(erbOp(i))+'</b> '+badge+
@@ -181,7 +185,7 @@ function erbPopup(i){
     (bs.length?'<div class="kv"><span>Faixas</span>'+bs.map(x=>x==="26000"?"26 GHz":x==="3500"?"3,5 GHz":x+" MHz").join(", ")+'</div>':"")+
     (inf.length?'<div class="kv"><span>Instalação</span>'+inf.map(n=>INFNOME[n]||n).join(", ")+'</div>':"")+
     '<div class="kv"><span>Alcance estimado</span>'+alc+'</div>'+
-    '<div class="mt">Estação '+esc(ERB.num[i])+' · Anatel, jul/2026. Os círculos tracejados mostram o alcance aproximado.</div></div>').openOn(map);
+    '<div class="mt">Estação '+esc(ERB.num[i])+' · Anatel, '+esc(ERB.ref)+'. Os círculos tracejados mostram o alcance aproximado.</div></div>').openOn(map);
 }
 map.on("popupclose",()=>{if(ERB.selI>=0){ERB.selI=-1;erbLayer.redraw()}});
 function erbAt(pt){
@@ -307,7 +311,7 @@ function renderHome(p){
   '<section><h3>Eventos recentes</h3>'+(recent.length?'<ul class="alist recent">'+recent.map(e=>{const l=S.locais.get(e.localId);const rs=e.resultados||[];
      return '<li><button data-go="'+esc(e.localId)+'"><span><span class="n">'+esc(e.nome)+'</span><br><span class="l">'+esc(fmtP(e))+(l?" · "+esc(l.nome):"")+'</span></span><span style="display:flex;gap:3px">'+rs.slice(0,5).map(r=>'<span class="dot" title="'+esc(r.operadora+": "+(STATUS[r.status]||""))+'" style="--c:'+(r.status==="bom"?"var(--t4g)":r.status==="ruim"?"var(--bad)":"var(--t3g)")+'"></span>').join("")+'</span></button></li>'}).join("")+'</ul>'
     :(S.dbState==="ready"?'<div class="empty">Nenhum evento registrado ainda. '+(S.canWrite?'Use <b>Registrar evento</b>, marque o local no mapa e informe como cada operadora se saiu.':'Quem tem permissão de edição pode registrar o primeiro.')+'</div>':""))+'</section>'+
-  erbHomeHtml()+'<section><h3>Como ler o mapa</h3><div class="legend"><div>Cada pin mostra a melhor rede que funcionou, o nome do local e o número de eventos.</div>'+'<div class="chips">'+TECHS.map(t=>techChip(t.k)).join("")+'</div>'+'<div><span class="chip off">—</span> nenhuma rede funcionou ou não foi informada</div><div style="margin-top:6px">Os pontos pequenos são as antenas da Anatel (jul/2026), coloridos pela rede mais avançada que oferecem. Aproxime o mapa e clique em um ponto para ver operadora, endereço, faixas e alcance estimado. O botão Alcance desenha o alcance aproximado de todas as antenas visíveis.</div><div><span class="dot" style="--c:var(--bad);width:12px;height:12px"></span> alguma operadora falhou no evento mais recente</div></div></section></div>';
+  erbHomeHtml()+'<section><h3>Como ler o mapa</h3><div class="legend"><div>Cada pin mostra a melhor rede que funcionou, o nome do local e o número de eventos.</div>'+'<div class="chips">'+TECHS.map(t=>techChip(t.k)).join("")+'</div>'+'<div><span class="chip off">—</span> nenhuma rede funcionou ou não foi informada</div><div style="margin-top:6px">Os pontos pequenos são as antenas da Anatel'+(ERB.ref?' ('+esc(ERB.ref)+')':'')+', coloridos pela rede mais avançada que oferecem. Aproxime o mapa e clique em um ponto para ver operadora, endereço, faixas e alcance estimado. O botão Alcance desenha o alcance aproximado de todas as antenas visíveis.</div><div><span class="dot" style="--c:var(--bad);width:12px;height:12px"></span> alguma operadora falhou no evento mais recente</div></div></section></div>';
   p.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>select(b.dataset.go,true));
 }
 function evCard(e){
@@ -329,18 +333,18 @@ function nearHtml(l,st){
     extra.push(r.n1?r.n1+(r.n1===1?" antena":" antenas")+" a até 1 km":"antena mais próxima a "+fmtDist(r.nearest));
     if(r.small)extra.push(r.small+(r.small===1?" indoor/small cell":" indoor/small cells")+" a "+fmtDist(r.smallD));
     const nov=[];if(r.novas)nov.push(r.novas+(r.novas===1?" antena nova":" antenas novas"));if(r.g5)nov.push(r.g5+(r.g5===1?" ganhou 5G":" ganharam 5G"));
-    if(nov.length)extra.push("desde abril, a até 2 km: "+nov.join(" e "));
+    if(nov.length)extra.push(desde()+", a até 2 km: "+nov.join(" e "));
     const ev=evRank[r.k];if(ev)extra.push("nos eventos: nota "+ev.score+(r.best&&ev.score<50?" (abaixo do esperado para a cobertura)":""));
     return '<li>'+opDot(r.k)+'<span class="nm">'+esc(r.k)+'</span>'+(r.best?techChip(r.best,1):'<span class="out">Fora do alcance</span>')+
       '<span class="meta">'+(r.best?'Dentro do alcance estimado de '+r.best+' · antena a '+fmtDist(r.bestD)+'<br>':'')+esc(extra.join(" · "))+'</span></li>'}).join("")+'</ul>';
-  return '<section><h3>Cobertura estimada</h3>'+body+'<p class="muted" style="margin:10px 0 0">Fonte: Anatel, ERBs jul/2026. O alcance é estimado pela faixa de frequência, pelo tipo de instalação e pela distância entre antenas da mesma operadora. A cobertura real varia com direção, altura das antenas, relevo e prédios.</p></section>';
+  return '<section><h3>Cobertura estimada</h3>'+body+'<p class="muted" style="margin:10px 0 0">Fonte: Anatel, ERBs '+esc(ERB.ref)+'. O alcance é estimado pela faixa de frequência, pelo tipo de instalação e pela distância entre antenas da mesma operadora. A cobertura real varia com direção, altura das antenas, relevo e prédios.</p></section>';
 }
 function erbHomeHtml(){
   if(ERB.error)return "";
   if(!ERB.ready)return '<section><h3>Antenas da Anatel</h3><p class="muted" style="margin:0">Carregando antenas…</p></section>';
   const rows=Object.entries(ERB.sum).filter(([k,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total);
   const tot=rows.reduce((s,[,v])=>s+v.total,0),nov=rows.reduce((s,[,v])=>s+v.novas,0),g5=rows.reduce((s,[,v])=>s+v.g5,0);
-  return '<section><h3>Antenas da Anatel <small>jul/2026</small></h3><p class="muted" style="margin:0 0 10px">'+fmtN(tot)+' antenas. Desde abril: '+fmtN(nov)+' novas, '+fmtN(g5)+' ganharam 5G e '+fmtN(ERB.remTot)+' saíram da lista.</p>'+
+  return '<section><h3>Antenas da Anatel <small>'+esc(ERB.ref)+'</small></h3><p class="muted" style="margin:0 0 10px">'+fmtN(tot)+' antenas. '+esc(desde().replace(/^d/,"D"))+': '+fmtN(nov)+' novas, '+fmtN(g5)+' ganharam 5G e '+fmtN(ERB.remTot)+' saíram da lista.</p>'+
   '<div style="overflow-x:auto"><table class="otab"><thead><tr><th>Operadora</th><th>Antenas</th><th>Com 5G</th><th>Novas</th><th>+5G</th></tr></thead><tbody>'+
   rows.map(([k,v])=>'<tr><td>'+opDot(k)+' '+esc(k)+'</td><td>'+fmtN(v.total)+'</td><td>'+fmtN(v.c5)+'</td><td class="'+(v.novas?"up":"")+'">'+(v.novas?"+"+fmtN(v.novas):"0")+'</td><td class="'+(v.g5?"up":"")+'">'+(v.g5?"+"+fmtN(v.g5):"0")+'</td></tr>').join("")+'</tbody></table></div>'+
   '<p class="muted" style="margin:10px 0 0">Use o seletor de antenas no topo para ver só as novas ou as que ganharam 5G.</p></section>';

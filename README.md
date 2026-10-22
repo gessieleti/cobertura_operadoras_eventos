@@ -51,6 +51,22 @@ sudo php bin/criar_usuario.php joao --desativar
 
 A senha é pedida no terminal e precisa ter pelo menos 8 caracteres. Ela é gravada com `password_hash`.
 
+## Atualizar a base de antenas
+
+A base vem da planilha de ERBs da Teleco ([telecocare.com.br/mapaerbs](https://www.telecocare.com.br/mapaerbs/Index.php)), que compila os dados da Anatel. Quando sair uma planilha nova, no seu computador (precisa de Python 3, sem instalar nada):
+
+```
+python bin/gerar_erb.py ERBs_Out26.xlsx --ref out/2026 --anterior data/erb-anatel-2026-07.json.gz --saida data/erb-anatel-2026-10.json.gz
+```
+
+- `--ref` é o mês da planilha e aparece na tela ("Anatel, ERBs out/2026").
+- `--anterior` é a base em uso. Ela serve para marcar as antenas novas, as que ganharam 5G e as que saíram, que aparecem na tela como "desde jul/2026".
+- O script avisa as linhas descartadas, como coordenada fora do Brasil ou número de estação repetido, e leva alguns minutos por causa do cálculo de espaçamento entre antenas.
+
+Depois aponte `erb_arquivo` em `config.php` para o arquivo novo, apague o antigo de `data/`, faça o commit e atualize o servidor com `git pull`. Os navegadores baixam a base nova sozinhos, porque o `erb.php` identifica cada versão pela data e pelo tamanho do arquivo.
+
+O alcance estimado de cada antena usa a faixa de frequência, o tipo de instalação e o espaçamento (média da distância até as 3 antenas mais próximas da mesma operadora). É uma estimativa: não considera potência, altura, direção, relevo nem prédios.
+
 ## Integrar ao Portal Hub (futuro)
 
 No `config.local.php`, use `'auth_modo' => 'portal'` e informe o caminho de `auth_shared`. Depois ajuste em `config.php` as chaves `sessao_usuario` e `sessao_perfil` para os nomes que o `auth_shared.php` grava em `$_SESSION`. **[a confirmar no sistema]**: hoje esses nomes são uma suposição. Nesse modo, o login e a tabela `cob_usuarios` deixam de ser usados.
@@ -66,6 +82,7 @@ No `config.local.php`, use `'auth_modo' => 'portal'` e informe o caminho de `aut
 | `lib/bootstrap.php` | Configuração, PDO, sessão, perfil e CSRF |
 | `lib/cobertura.php` | Regras de negócio: validação, gravação em transação, exclusões e geocodificação |
 | `bin/criar_usuario.php` | Cria e desativa usuários (só pela linha de comando) |
+| `bin/gerar_erb.py` | Gera a base de antenas a partir da planilha da Teleco |
 | `deploy/instalar.sh` | Instalação e atualização no servidor |
 | `assets/` | CSS, JavaScript da tela e contorno dos estados (IBGE) |
 | `data/erb-anatel-2026-07.json.gz` | Antenas da Anatel |

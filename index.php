@@ -37,7 +37,7 @@ $cfg = [
       </div>
       <div class="filters">
         <select id="fTech" aria-label="Filtrar por tecnologia"><option value="">Todas as redes</option></select>
-        <select id="fOp" aria-label="Filtrar por operadora"><option value="">Todas as operadoras</option></select><select id="fErb" aria-label="Antenas no mapa" disabled><option value="todas">Carregando antenas…</option><option value="novas">Antenas novas desde abril</option><option value="g5">Ganharam 5G desde abril</option><option value="ocultas">Ocultar antenas</option></select><button type="button" class="tog" id="alcBtn" aria-pressed="false" disabled title="Mostrar o alcance estimado das antenas"><span class="sw"></span>Alcance</button>
+        <select id="fOp" aria-label="Filtrar por operadora"><option value="">Todas as operadoras</option></select><select id="fErb" aria-label="Antenas no mapa" disabled><option value="todas">Carregando antenas…</option><option value="novas">Antenas novas</option><option value="g5">Ganharam 5G</option><option value="ocultas">Ocultar antenas</option></select><button type="button" class="tog" id="alcBtn" aria-pressed="false" disabled title="Mostrar o alcance estimado das antenas"><span class="sw"></span>Alcance</button>
       </div>
       <button class="btn primary" id="addBtn" hidden>Registrar evento</button>
 <?php if (cob_auth_propria() && !cob_config('modo_dev')): ?>
