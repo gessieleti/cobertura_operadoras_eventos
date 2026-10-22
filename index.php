@@ -37,13 +37,14 @@ $cfg = [
       </div>
       <div class="filters">
         <select id="fTech" aria-label="Filtrar por tecnologia"><option value="">Todas as redes</option></select>
-        <select id="fOp" aria-label="Filtrar por operadora"><option value="">Todas as operadoras</option></select><button type="button" class="tog" id="erbBtn" aria-pressed="true" title="Mostrar ou ocultar as antenas da Anatel"><span class="sw"></span><span id="erbLbl">Antenas…</span></button>
+        <select id="fOp" aria-label="Filtrar por operadora"><option value="">Todas as operadoras</option></select><select id="fErb" aria-label="Antenas no mapa" disabled><option value="todas">Carregando antenas…</option><option value="novas">Antenas novas desde abril</option><option value="g5">Ganharam 5G desde abril</option><option value="ocultas">Ocultar antenas</option></select><button type="button" class="tog" id="alcBtn" aria-pressed="false" disabled title="Mostrar o alcance estimado das antenas"><span class="sw"></span>Alcance</button>
       </div>
       <button class="btn primary" id="addBtn" hidden>Registrar evento</button>
 <?php if (cob_auth_propria() && !cob_config('modo_dev')): ?>
       <form class="user" method="post" action="logout.php"><input type="hidden" name="csrf" value="<?= cob_h(cob_csrf()) ?>"><span><?= cob_h(cob_usuario()) ?></span><button class="btn small">Sair</button></form>
 <?php endif; ?>
     </div>
+    <div class="hint" id="alcHint" hidden style="display:block;bottom:22px"></div>
     <div class="hint" id="hint">Clique no mapa para marcar o local, ou use o endereço ao lado</div>
   </div>
   <aside class="panel" id="panel" aria-live="polite"></aside>

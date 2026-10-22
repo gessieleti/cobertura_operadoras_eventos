@@ -50,7 +50,7 @@ $config = [
     ],
 
     // Arquivo compactado com as ERBs da Anatel (gerado a partir do design).
-    'erb_arquivo' => __DIR__ . '/data/erb-anatel-2026-04.json.gz',
+    'erb_arquivo' => __DIR__ . '/data/erb-anatel-2026-07.json.gz',
 ];
 
 if (is_file(__DIR__ . '/config.local.php')) {

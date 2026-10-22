@@ -3,7 +3,7 @@
 Sistema PHP + MySQL feito a partir do design "Cobertura de antenas". Ele mostra um mapa do Brasil com:
 - os locais de evento;
 - a avaliação de cada operadora em cada evento: a rede usada e se funcionou bem, ficou instável ou não funcionou;
-- as cerca de 110 mil antenas (ERBs) da Anatel, de abr/2026.
+- as cerca de 113 mil antenas (ERBs) da Anatel, de jul/2026, com faixas, tipo de instalação e o que mudou desde abril.
 
 Por enquanto o sistema roda **independente** dos outros sistemas Wibag. Ele tem login próprio e um schema MySQL próprio (`wibag_cobertura`). A integração com o Portal Hub já está prevista: veja "Integrar ao Portal Hub" abaixo.
 
@@ -68,7 +68,7 @@ No `config.local.php`, use `'auth_modo' => 'portal'` e informe o caminho de `aut
 | `bin/criar_usuario.php` | Cria e desativa usuários (só pela linha de comando) |
 | `deploy/instalar.sh` | Instalação e atualização no servidor |
 | `assets/` | CSS, JavaScript da tela e contorno dos estados (IBGE) |
-| `data/erb-anatel-2026-04.json.gz` | Antenas da Anatel |
+| `data/erb-anatel-2026-07.json.gz` | Antenas da Anatel |
 | `sql/001_cobertura.sql`, `sql/002_usuarios.sql` | Tabelas, cada uma com o seu `_rollback.sql` |
 
 ## Segurança
