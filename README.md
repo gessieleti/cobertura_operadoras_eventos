@@ -22,7 +22,7 @@ O `deploy/instalar.sh` faz o seguinte:
 2. cria o schema `wibag_cobertura` e um usuário MySQL só para ele, com senha aleatória e acesso apenas a esse schema;
 3. grava o `config.local.php`, que fica fora do git e só o Apache consegue ler;
 4. faz um backup do schema em `/home/tomich/backups/` (se ele já tiver tabelas) e aplica os arquivos de `sql/`;
-5. publica o sistema no Apache em `/cobertura`, bloqueando `lib/`, `sql/`, `data/`, `bin/`, `deploy/` e `.git`;
+5. publica o sistema no Apache na porta própria **18443** (`http://179.48.68.88:18443/`), bloqueando `lib/`, `sql/`, `data/`, `bin/`, `deploy/` e `.git`, e avisa se outra configuração ainda publica a mesma pasta (por exemplo, numa porta antiga);
 6. pede o login e a senha do primeiro administrador.
 
 O script não altera os outros sistemas nem os bancos deles. Pode rodar de novo a cada atualização:
@@ -31,7 +31,7 @@ O script não altera os outros sistemas nem os bancos deles. Pode rodar de novo 
 cd /var/www/cobertura && sudo git pull && sudo bash deploy/instalar.sh
 ```
 
-Para instalar uma homologação separada, use outro schema e outro caminho, por exemplo `sudo BANCO=wibag_cobertura_staging URL_BASE=/cobertura-staging bash deploy/instalar.sh` (a partir de outro clone). As demais opções estão no topo do script. Se o servidor usar Nginx, há um exemplo em `deploy/nginx-cobertura.conf`.
+Para usar outra porta, rode com `PORTA`, por exemplo `sudo PORTA=18444 bash deploy/instalar.sh`. Com `PORTA=` (vazio), o sistema volta a ficar em `/cobertura` na porta padrão do Apache. Para servir HTTPS na porta, informe o certificado com `SSL_CERT=/caminho/cert.pem SSL_KEY=/caminho/chave.pem`. Para uma homologação separada, use outro clone, outro schema e outra porta: `sudo BANCO=wibag_cobertura_staging PORTA=18444 bash deploy/instalar.sh`. As demais opções estão no topo do script. Se o servidor usar Nginx, há um exemplo em `deploy/nginx-cobertura.conf`.
 
 Requisitos: PHP 8.0+ e MySQL 5.7+ ou MariaDB 10.3+. O `CHECK` de período só é aplicado a partir do MySQL 8.0.16, mas a API faz a mesma validação.
 

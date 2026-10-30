@@ -32,7 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['cob_usuario'] = ['id' => (int) $u['id'], 'nome' => $u['nome'] ?: $u['login'], 'perfil' => $u['perfil']];
                 unset($_SESSION['cob_csrf']);
-                cob_db()->prepare('UPDATE cob_usuarios SET ultimo_acesso = ? WHERE id = ?')->execute([date('Y-m-d H:i:s'), $u['id']]);
+                try {
+                    cob_db()->prepare('UPDATE cob_usuarios SET ultimo_acesso = ? WHERE id = ?')->execute([date('Y-m-d H:i:s'), $u['id']]);
+                } catch (Throwable $e) {
+                    // Registrar o último acesso não pode impedir a entrada.
+                    error_log('[cobertura] ultimo_acesso: ' . $e->getMessage());
+                }
                 header('Location: index.php');
                 exit;
             }
