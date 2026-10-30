@@ -18,7 +18,7 @@ $rota = $_GET['r'] ?? '';
 $metodo = $_SERVER['REQUEST_METHOD'];
 
 if (!cob_pode_ver()) {
-    cob_responder(401, ['erro' => 'Sua sessão expirou. Entre de novo no Portal.', 'codigo' => 'sem_sessao']);
+    cob_responder(401, ['erro' => 'Sua sessão expirou. Entre de novo.', 'codigo' => 'sem_sessao']);
 }
 
 $escritas = ['evento_salvar', 'evento_excluir', 'local_excluir'];

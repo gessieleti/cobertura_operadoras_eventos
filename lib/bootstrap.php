@@ -3,10 +3,22 @@ declare(strict_types=1);
 
 $COB_CONFIG = require __DIR__ . '/../config.php';
 
-if (!empty($COB_CONFIG['auth_shared']) && is_file($COB_CONFIG['auth_shared'])) {
-    require_once $COB_CONFIG['auth_shared'];
+if ($COB_CONFIG['auth_modo'] === 'portal') {
+    if (!empty($COB_CONFIG['auth_shared']) && is_file($COB_CONFIG['auth_shared'])) {
+        require_once $COB_CONFIG['auth_shared'];
+    }
+} elseif (session_status() === PHP_SESSION_NONE) {
+    // Sessão própria, com nome próprio, para não se misturar com a dos outros
+    // sistemas que rodam no mesmo servidor.
+    session_name('COBSESSID');
+    session_set_cookie_params([
+        'path'     => dirname($_SERVER['SCRIPT_NAME'] ?? '/') ?: '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    ]);
 }
-if (session_status() === PHP_SESSION_NONE) {
+if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
@@ -40,14 +52,33 @@ function cob_sessao(array $chaves): ?string
     return null;
 }
 
+function cob_auth_propria(): bool
+{
+    return cob_config('auth_modo') !== 'portal';
+}
+
 /** Nome do usuário logado, ou null se não houver sessão. */
 function cob_usuario(): ?string
 {
-    $u = cob_sessao(cob_config('sessao_usuario'));
+    $u = cob_auth_propria()
+        ? ($_SESSION['cob_usuario']['nome'] ?? null)
+        : cob_sessao(cob_config('sessao_usuario'));
     if ($u === null && cob_config('modo_dev')) {
         return 'dev';
     }
     return $u;
+}
+
+function cob_perfil(): string
+{
+    return mb_strtolower(cob_auth_propria()
+        ? (string) ($_SESSION['cob_usuario']['perfil'] ?? '')
+        : (string) cob_sessao(cob_config('sessao_perfil')));
+}
+
+function cob_url_login(): string
+{
+    return cob_auth_propria() ? 'login.php' : cob_config('url_login');
 }
 
 function cob_pode_ver(): bool
@@ -63,9 +94,8 @@ function cob_pode_editar(): bool
     if (cob_usuario() === null) {
         return false;
     }
-    $perfil = mb_strtolower((string) cob_sessao(cob_config('sessao_perfil')));
     $permitidos = array_map('mb_strtolower', cob_config('perfis_edicao'));
-    return in_array($perfil, $permitidos, true);
+    return in_array(cob_perfil(), $permitidos, true);
 }
 
 function cob_csrf(): string
